@@ -32,7 +32,7 @@ public class Player : MonoBehaviour
 
     void FixedUpdate()
     {
-        // Bag?? Spamming space = higher jumps/ waiting after jumps = short jumps
+        // Bug?? Spamming space = higher jumps/ waiting after jumps = short jumps
         // TODO: Tune for better comfort
 
 

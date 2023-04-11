@@ -468,8 +468,8 @@ MonoBehaviour:
   groundMask:
     serializedVersion: 2
     m_Bits: 64
-  jumpBoost: 5
-  airJump: 2
+  jumpBoost: 7
+  airJump: 1
   isGrounded: 0
 --- !u!54 &1448039049
 Rigidbody:
