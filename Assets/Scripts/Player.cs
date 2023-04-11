@@ -6,14 +6,20 @@ using System;
 public class Player : MonoBehaviour
 {
     Rigidbody rb;
-
+    
+    
+    [Header("Movement")]
     public float speed;
+    public Transform GroundChecker;
+    public LayerMask groundMask;
     public float jumpBoost;
     [Range(0, 3)]
     public int airJump = 0;
+
+    public bool isGrounded;
     private bool jump = false;
     private int jumpCnt;
-
+    
     // Start is called before the first frame update
     void Start()
     {
@@ -26,9 +32,14 @@ public class Player : MonoBehaviour
 
     void FixedUpdate()
     {
+        // Bag?? Spamming space = higher jumps/ waiting after jumps = short jumps
         // TODO: Tune for better comfort
-        // TODO: Better ground detection
-        if (rb.velocity.y == 0) // Plr is not jumping or falling -> Recharge jumps
+
+
+        isGrounded = Physics.CheckSphere(GroundChecker.position, 0.2f, groundMask);
+
+
+        if (isGrounded) // Plr is touching ground => jumps resets
         {
             jumpCnt = airJump + 1;
         }
@@ -46,10 +57,12 @@ public class Player : MonoBehaviour
             v.x *= 0.9f;
         }
 
+
+
         if (jump)
         {
             jump = false;
-            if (v.y == 0 || jumpCnt > 0)
+            if (isGrounded || jumpCnt > 0)
             {
                 v.y += jumpBoost;
             }
