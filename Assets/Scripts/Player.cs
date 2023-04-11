@@ -7,7 +7,6 @@ public class Player : MonoBehaviour
 {
     Rigidbody rb;
     
-    
     [Header("Movement")]
     public float speed;
     public Transform GroundChecker;
@@ -32,16 +31,14 @@ public class Player : MonoBehaviour
 
     void FixedUpdate()
     {
-        // Bug?? Spamming space = higher jumps/ waiting after jumps = short jumps
         // TODO: Tune for better comfort
-
 
         isGrounded = Physics.CheckSphere(GroundChecker.position, 0.2f, groundMask);
 
 
         if (isGrounded) // Plr is touching ground => jumps resets
         {
-            jumpCnt = airJump + 1;
+            jumpCnt = airJump;
         }
 
         Vector3 v = rb.velocity;
@@ -64,7 +61,7 @@ public class Player : MonoBehaviour
             jump = false;
             if (isGrounded || jumpCnt > 0)
             {
-                v.y += jumpBoost;
+                v.y = jumpBoost;
             }
             jumpCnt--;
         }
