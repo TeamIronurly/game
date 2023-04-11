@@ -11,8 +11,6 @@ public class Player : MonoBehaviour
     public float speed;
     private float k;
 
-
-
     // Start is called before the first frame update
     void Start()
     {
@@ -25,7 +23,6 @@ public class Player : MonoBehaviour
         k = Input.GetAxisRaw("Horizontal");
     }
 
-
     void FixedUpdate()
     {
         if (Math.Abs(k) == 1)
@@ -33,8 +30,4 @@ public class Player : MonoBehaviour
             rb.velocity = Vector3.Lerp(rb.velocity, new Vector3(k * speed, 0f, 0f), 0.1f);
         }
     }
-
-
-
-    
 }
