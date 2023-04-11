@@ -28,21 +28,13 @@ public class Player : MonoBehaviour
 
     void FixedUpdate()
     {
-        rb.AddForce(new Vector3(k * speed, 0f, 0f), ForceMode.Impulse);
+        if (Math.Abs(k) == 1)
+        {
+            rb.velocity = Vector3.Lerp(rb.velocity, new Vector3(k * speed, 0f, 0f), 0.1f);
+        }
     }
 
 
 
-    // Смерть при соприкосновении с DIe коллайдером
-    //private void OnTriggerEnter(Collider collision)
-    //{
-    //    if (collision.CompareTag("Die"))
-    //    {
-
-    //        Dead1 = true;
-    //        Destroy(gameObject);
-
-    //    }
-
-    //}
+    
 }
