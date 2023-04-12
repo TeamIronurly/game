@@ -6,42 +6,29 @@ using System;
 public class Player : MonoBehaviour
 {
     Rigidbody rb;
-    
     [Header("Movement")]
     public float speed;
     public Transform GroundChecker;
     public LayerMask groundMask;
     public float jumpBoost;
-    [Range(0, 3)]
-    public int airJump = 0;
+    [Range(1, 3)]
+    public int Jumps;
+    [SerializeField] private int jumpCnt; //to check jumps (Like a debug.log)
 
-    public bool isGrounded;
-    private bool jump = false;
-    private int jumpCnt;
-    
-    // Start is called before the first frame update
     void Start()
     {
         rb = GetComponent<Rigidbody>();
     }
 
-    void Update()
-    {
-        jump = jump || Input.GetButtonDown("Jump");
-    }
-
     void FixedUpdate()
     {
         // TODO: Tune for better comfort
-
-        isGrounded = Physics.CheckSphere(GroundChecker.position, 0.2f, groundMask);
-
-        if (isGrounded) // Plr is touching ground => jumps resets
-        {
-            jumpCnt = airJump;
-        }
-
         Vector3 v = rb.velocity;
+
+        if (Physics.CheckSphere(GroundChecker.position, 0.1f, groundMask)) // Plr is touching ground => jumps resets
+        {
+            jumpCnt = Jumps;
+        }
 
         float k = Input.GetAxisRaw("Horizontal");
         if (k != 0)
@@ -50,24 +37,16 @@ public class Player : MonoBehaviour
         }
         else
         {
-            // Horizontal drag
-            v.x *= 0.9f;
+            v.x *= 0.95f;// Horizontal drag
         }
 
-        if (jump)
+        if (jumpCnt > 0 && Input.GetButtonDown("Jump")) // sometime uses two jumps in one press (i think cause of fixedUpdate),dont kno how to fix it correctly
         {
-            jump = false;
-            if (isGrounded || jumpCnt > 0)
-            {
-                v.y = jumpBoost;
-            }
+            v.y = jumpBoost;
             jumpCnt--;
         }
 
-        // Gravity
-        v -= Vector3.up * 9.81f * 0.02f;
-
-        // Apply recalculated velocity
-        rb.velocity = v;
+        v -= Vector3.up * 9.81f * 0.02f; // Gravity
+        rb.velocity = v; // Apply recalculated velocity
     }
 }
