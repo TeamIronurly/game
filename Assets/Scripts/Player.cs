@@ -8,24 +8,31 @@ public class Player : MonoBehaviour
     Rigidbody rb;
     [Header("Movement")]
     public float speed;
-    public Transform GroundChecker;
     public LayerMask groundMask;
-    public float jumpBoost;
+    public float jumpHeight; // How high can the player jump in units
     [Range(1, 3)]
     public int Jumps;
-    [SerializeField] private int jumpCnt; //to check jumps (Like a debug.log)
+    private int jumpCnt; //to check jumps (Like a debug.log)
+    private bool jumpTrigger = false;
+
+    private float g = 9.81f;
 
     void Start()
     {
         rb = GetComponent<Rigidbody>();
     }
 
+    void Update()
+    {
+        jumpTrigger = jumpTrigger || Input.GetButtonDown("Jump");
+    }    
+
     void FixedUpdate()
     {
         // TODO: Tune for better comfort
         Vector3 v = rb.velocity;
 
-        if (Physics.CheckSphere(GroundChecker.position, 0.1f, groundMask)) // Plr is touching ground => jumps resets
+        if (Physics.CheckSphere(transform.position - Vector3.up, 0.1f, groundMask)) // Plr is touching ground => jumps resets
         {
             jumpCnt = Jumps;
         }
@@ -37,16 +44,18 @@ public class Player : MonoBehaviour
         }
         else
         {
-            v.x *= 0.95f;// Horizontal drag
+            v.x *= 0.95f; // Horizontal drag
         }
 
-        if (jumpCnt > 0 && Input.GetButtonDown("Jump")) // sometime uses two jumps in one press (i think cause of fixedUpdate),dont kno how to fix it correctly
+        if (jumpTrigger && jumpCnt > 0)
         {
-            v.y = jumpBoost;
+            v.y = Mathf.Sqrt(2 * g * jumpHeight);
             jumpCnt--;
         }
 
-        v -= Vector3.up * 9.81f * 0.02f; // Gravity
+        v -= Vector3.up * g * 0.02f; // Gravity
         rb.velocity = v; // Apply recalculated velocity
+
+        jumpTrigger = false;
     }
 }
