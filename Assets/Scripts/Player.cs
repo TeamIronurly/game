@@ -25,7 +25,8 @@ public class Player : MonoBehaviour
         rb = GetComponent<Rigidbody>();
     }
 
-    void Update() {
+    void Update()
+    {
         jump = jump || Input.GetButtonDown("Jump");
     }
 
@@ -34,7 +35,6 @@ public class Player : MonoBehaviour
         // TODO: Tune for better comfort
 
         isGrounded = Physics.CheckSphere(GroundChecker.position, 0.2f, groundMask);
-
 
         if (isGrounded) // Plr is touching ground => jumps resets
         {
@@ -53,8 +53,6 @@ public class Player : MonoBehaviour
             // Horizontal drag
             v.x *= 0.9f;
         }
-
-
 
         if (jump)
         {
