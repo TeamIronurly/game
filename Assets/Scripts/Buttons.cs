@@ -5,12 +5,8 @@ using UnityEngine.SceneManagement;
 
 public class Buttons : MonoBehaviour
 {
-    public void SinglePlayer()
+    public void LoadScene(string name)
     {
-        SceneManager.LoadScene("SinglePlayer");
-    }
-    public void ExitToMenu()
-    {
-        SceneManager.LoadScene("MainMenu");
+        SceneManager.LoadScene(name);
     }
 }
