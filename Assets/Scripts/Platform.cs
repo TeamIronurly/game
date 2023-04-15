@@ -2,31 +2,26 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Platform: MonoBehaviour
+public class Platform : MonoBehaviour
 {
-    public GameObject spot;
-    public GameObject Plat;
-    private float x;
-    Vector3 whereSpawn;
+    public GameObject platform;
+    private float pos_x;
     public float Delay;
-    private float NextSpawn=0.0f;
+    private float NextSpawn = 0f;
 
     void Update()
     {
-       if (Time.time>NextSpawn)
-       {
-        NextSpawn = Time.time+ Delay;
-        x = Random.Range(-10,10);
-        whereSpawn = new Vector3 (x, transform.position.y, transform.position.z);
-         Plat = Instantiate (spot,whereSpawn,Quaternion.identity);
-         
-       }
-    }
-private void OnTriggerEnter(Collider collision)
-    {
-        if (collision.tag == "Lava") 
+        if (Time.time > NextSpawn)
         {
-            Destroy(Plat);
-        }      
+            NextSpawn = Time.time + Delay;
+            pos_x = Random.Range(-15, -1);
+
+            Vector3 left = new (pos_x, transform.position.y, transform.position.z);
+            Vector3 right = new (Mathf.Abs(pos_x), transform.position.y, transform.position.z);
+
+            Instantiate(platform, left, Quaternion.identity);
+            Instantiate(platform, right, Quaternion.identity);
+        }
     }
+    
 }
