@@ -9,4 +9,8 @@ public class Buttons : MonoBehaviour
     {
         SceneManager.LoadScene("SinglePlayer");
     }
+    public void ExitToMenu()
+    {
+        SceneManager.LoadScene("MainMenu");
+    }
 }
