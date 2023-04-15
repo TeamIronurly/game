@@ -17,7 +17,7 @@ public class Platform : MonoBehaviour
             pos_x = Random.Range(-15, -1);
 
             Vector3 left = new (pos_x, transform.position.y, transform.position.z);
-            Vector3 right = new (Mathf.Abs(pos_x), transform.position.y, transform.position.z);
+            Vector3 right = new (-pos_x, transform.position.y, transform.position.z);
 
             Instantiate(platform, left, Quaternion.identity);
             Instantiate(platform, right, Quaternion.identity);
