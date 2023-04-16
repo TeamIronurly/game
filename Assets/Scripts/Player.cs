@@ -2,9 +2,12 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System;
+using UnityEngine.SceneManagement;
+
 
 public class Player : MonoBehaviour
 {
+    
     Rigidbody rb;
 
     [Header("Movement")]
@@ -13,13 +16,14 @@ public class Player : MonoBehaviour
 
     [Range(1, 3)]
     public int Jumps;
-    public float jumpHeight; // How high can the player jump in units
+    public float jumpHeight;
     private int jumpCnt;
     private bool jumpTrigger = false;
     private float g = 9.81f;
-
+    
     void Start()
     {
+        Time.timeScale = 1f;
         rb = GetComponent<Rigidbody>();
     }
 
@@ -57,5 +61,19 @@ public class Player : MonoBehaviour
         rb.velocity = v; // Apply recalculated velocity
 
         jumpTrigger = false;
+    }
+    private void OnTriggerExit(Collider collision) // if touches "Lava" = dies
+    {
+        if (collision.CompareTag("Lava"))
+        {
+            Time.timeScale = 0.3f;
+            Invoke("Dead", 1f); // Dont kno how to make it more optimized...
+        }
+
+    }
+    private void Dead()
+    {
+        Destroy(gameObject);
+        SceneManager.LoadScene("GameOver");
     }
 }
