@@ -22,13 +22,6 @@ class Packet
     public Type type;
     public Protocol protocol;
     public byte[] bytes = new byte[0];
-
-    public Packet(Type type)
-    {
-        this.type = type;
-        bytes = BitConverter.GetBytes((int)type);
-        protocol = (type == Type.MOVED||type==Type.PING) ? Protocol.UDP : Protocol.TCP;
-    }
     public Packet(Type type, int player)
     {
         this.type = type;

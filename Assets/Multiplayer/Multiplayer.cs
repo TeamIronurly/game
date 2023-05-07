@@ -1,9 +1,7 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 public class Multiplayer : MonoBehaviour
@@ -15,43 +13,66 @@ public class Multiplayer : MonoBehaviour
     public GameObject JoinButton;
     public GameObject YouWonText;
     public Rigidbody Player;
-    public Rigidbody Enemy;
-
+    public Rigidbody EnemyPrefab;
     public string ServerIp;
+    public UnityEvent onWin;
+
+
+    struct EnemyMove
+    {
+        public int id;
+        public Vector3 p;
+        public Vector3 v;
+    }
+
+    //queues for updating enemies in main thread
+    Queue<EnemyMove> enemyMoves = new Queue<EnemyMove>();
+    Queue<int> enemyJoins = new Queue<int>();
+
+    Dictionary<int, Rigidbody> Enemies = new Dictionary<int, Rigidbody>();
     ServerConnection serverConnection;
 
-    bool gameStarted = false;
-
-    // Start is called before the first frame update
     async Task Start()
     {
+        //pause game
         Time.timeScale = 0;
-
-        serverConnection = await Task.Run(() => new ServerConnection(ServerIp));
-        serverConnection.send(new Packet(Packet.Type.CREATE_LOBBY, serverConnection.playerId));
-        while (serverConnection.lobbyId == 0)
-        {
-            await Task.Delay(50);
-        }
-
-        WaitingPlayersText.GetComponent<Text>().text += serverConnection.lobbyId;
+        //create server connection
+        serverConnection = new ServerConnection();
+        //set callbacks
+        serverConnection.onWin = onWin.Invoke;
+        serverConnection.onPlayerMove = enemyMoved;
+        serverConnection.onPlayerJoined = enemyJoined;
+        //connect to server
+        await serverConnection.connect(ServerIp);
+        Debug.Log("connected to server");
+        await serverConnection.login();
+        Debug.Log("loggen in");
+        //create lobby
+        int lobbyId = await serverConnection.createLobby();
+        Debug.Log("created lobby");
+        //update UI
+        WaitingPlayersText.GetComponent<Text>().text += lobbyId;
         WaitingPlayersText.SetActive(true);
         JoinLobbyButton.SetActive(true);
         ConnectingText.SetActive(false);
-
-
-        while (!serverConnection.secondPlayerConnected)
+        //wait for enemies
+        while (Enemies.Count < 1)
         {
             await Task.Delay(50);
         }
+        Debug.Log("stated game");
+        //update UI
         WaitingPlayersText.SetActive(false);
         JoinLobbyButton.SetActive(false);
-        if (!gameStarted) gameStart();
-
+        //start game
+        Time.timeScale = 1;
     }
 
     public void joinOtherLobbyBtnClick()
     {
+        //leave lobby
+        serverConnection.leaveLobby();
+        //update UI
         WaitingPlayersText.SetActive(false);
         JoinLobbyButton.SetActive(false);
         LobbyInput.SetActive(true);
@@ -60,57 +81,66 @@ public class Multiplayer : MonoBehaviour
 
     public void joinBtnClick()
     {
-        serverConnection.lobbyId = int.Parse(LobbyInput.GetComponentsInChildren<Text>()[1].text);
-        serverConnection.send(new Packet(Packet.Type.LEFT, serverConnection.playerId));
-        serverConnection.joinedLobby = false;
-        serverConnection.send(new Packet(Packet.Type.JOIN, serverConnection.playerId, serverConnection.lobbyId));
-        int startWait = Environment.TickCount;
-        while (!serverConnection.joinedLobby && Environment.TickCount < startWait + 2000)
+        //join lobby
+        int lobby = int.Parse(LobbyInput.GetComponentsInChildren<Text>()[1].text);
+        bool joined = serverConnection.joinLobby(lobby);
+        Debug.Log("joined lobby");
+        if (joined)
         {
-            Thread.Sleep(50);
-        }
-        if (serverConnection.joinedLobby)
-        {
+            Debug.Log("stated game");
+            //update UI
             LobbyInput.SetActive(false);
             JoinButton.SetActive(false);
-            if (!gameStarted) gameStart();
+            //start game
+            Time.timeScale = 1;
         }
     }
 
-    void gameStart()
+    public void enemyJoined(int id)
     {
-        gameStarted = true;
-        Time.timeScale = 1;
+        //adding new enemies to queue to be instantiated in Update
+        //because instantiating from another thread does not work
+        enemyJoins.Enqueue(id);
+    }
+    public void enemyMoved(int id, Vector3 p, Vector3 v)
+    {
+        //same as enemyJoined but for moving enemies instead of instantiating
+        EnemyMove update = new EnemyMove { id = id, p = p, v = v };
+        enemyMoves.Enqueue(update);
+    }
+    public void lost()
+    {
+        //tell enemies that you lost
+        serverConnection.sendLost();
     }
 
-    void Update(){
-        if(serverConnection.won&&YouWonText.activeSelf==false){
-            YouWonText.SetActive(true);
+
+    void Update()
+    {
+        //create enemies joined to the lobby from prefab
+        while (enemyJoins.Count != 0)
+        {
+            int id = enemyJoins.Dequeue();
+            Enemies[id] = Instantiate(EnemyPrefab);
         }
     }
     void FixedUpdate()
     {
-        if (!gameStarted) return;
-
+        //send player position to enemies
         if (Player != null)
         {
-            byte[] positionBytes = new byte[4 * 4];
-            BitConverter.GetBytes(Player.position.x).CopyTo(positionBytes, 0);
-            BitConverter.GetBytes(Player.position.y).CopyTo(positionBytes, 4);
-            BitConverter.GetBytes(Player.velocity.x).CopyTo(positionBytes, 8);
-            BitConverter.GetBytes(Player.velocity.y).CopyTo(positionBytes, 12);
-            Task.Run(() => serverConnection.send(new Packet(Packet.Type.MOVED, serverConnection.playerId, positionBytes)));
+            serverConnection.sendPlayerPosition(Player.position, Player.velocity);
         }
 
-        if (Enemy != null && serverConnection.newPosition)
+        //move enemies enemies
+        while (enemyMoves.Count != 0)
         {
-            serverConnection.newPosition = false;
-            Enemy.position = new Vector3(serverConnection.x, serverConnection.y, 0);
-            Enemy.velocity = new Vector3(serverConnection.vx, serverConnection.vy, 0);
+            EnemyMove moved = enemyMoves.Dequeue();
+            if (Enemies.ContainsKey(moved.id))
+            {
+                Enemies[moved.id].position = moved.p;
+                Enemies[moved.id].velocity = moved.v;
+            }
         }
-    }
-
-    public void die(){
-        serverConnection.send(new Packet(Packet.Type.LOST,serverConnection.playerId));
     }
 }

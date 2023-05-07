@@ -1,18 +1,18 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class PlayerDies : MonoBehaviour
 {
-    public GameObject YouLostText;
-    public Multiplayer multiplayer;
+    public UnityEvent onLoose;
     private void OnTriggerExit(Collider collision) // if touches "Lava" = dies
     {
         if (collision.CompareTag("Lava"))
         {
             Destroy(gameObject);
-            YouLostText.SetActive(true);
-            multiplayer.die();
+            onLoose.Invoke();
         }
 
     }
