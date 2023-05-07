@@ -84,7 +84,8 @@ public class Multiplayer : MonoBehaviour
     }
 
     void Update(){
-        if(serverConnection.won&&YouWonText.activeSelf==false){
+        if (serverConnection == null) return;
+        if(serverConnection.won && YouWonText.activeSelf == false){
             YouWonText.SetActive(true);
         }
     }
