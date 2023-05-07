@@ -9,6 +9,10 @@ public class Platform : MonoBehaviour
     public float Delay;
     private float NextSpawn = 0f;
 
+    void Start(){
+            Random.seed = 123;
+    }
+
     void Update()
     {
         if (Time.time > NextSpawn)
