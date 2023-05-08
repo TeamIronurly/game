@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Events;
@@ -6,12 +8,7 @@ using UnityEngine.UI;
 
 public class Multiplayer : MonoBehaviour
 {
-    public GameObject WaitingPlayersText;
-    public GameObject JoinLobbyButton;
-    public GameObject ConnectingText;
-    public GameObject LobbyInput;
-    public GameObject JoinButton;
-    public GameObject YouWonText;
+    public MultiplayerUI multiplayerUI;
     public Rigidbody Player;
     public Rigidbody EnemyPrefab;
     public string ServerIp;
@@ -27,7 +24,7 @@ public class Multiplayer : MonoBehaviour
 
     //queues for updating enemies in main thread
     Queue<EnemyMove> enemyMoves = new Queue<EnemyMove>();
-    Queue<int> enemyJoins = new Queue<int>();
+    Queue<Action> runInUpdate = new Queue<Action>();
 
     Dictionary<int, Rigidbody> Enemies = new Dictionary<int, Rigidbody>();
     ServerConnection serverConnection;
@@ -39,22 +36,30 @@ public class Multiplayer : MonoBehaviour
         //create server connection
         serverConnection = new ServerConnection();
         //set callbacks
-        serverConnection.onWin = onWin.Invoke;
+        serverConnection.onWin = () =>
+        {
+            runInUpdate.Enqueue(onWin.Invoke);
+        };
         serverConnection.onPlayerMove = enemyMoved;
         serverConnection.onPlayerJoined = enemyJoined;
         //connect to server
+        multiplayerUI.setState(MultiplayerUI.State.CONNECTING);
         await serverConnection.connect(ServerIp);
         Debug.Log("connected to server");
         await serverConnection.login();
-        Debug.Log("loggen in");
+        Debug.Log("logged in");
+
+        await createLobby();
+    }
+
+    public async Task createLobby()
+    {
         //create lobby
         int lobbyId = await serverConnection.createLobby();
         Debug.Log("created lobby");
         //update UI
-        WaitingPlayersText.GetComponent<Text>().text += lobbyId;
-        WaitingPlayersText.SetActive(true);
-        JoinLobbyButton.SetActive(true);
-        ConnectingText.SetActive(false);
+        multiplayerUI.setLobbyId(lobbyId);
+        multiplayerUI.setState(MultiplayerUI.State.WAITING_PLAYERS);
         //wait for enemies
         while (Enemies.Count < 1)
         {
@@ -62,45 +67,59 @@ public class Multiplayer : MonoBehaviour
         }
         Debug.Log("stated game");
         //update UI
-        WaitingPlayersText.SetActive(false);
-        JoinLobbyButton.SetActive(false);
+        multiplayerUI.setState(MultiplayerUI.State.JOINED_GAME);
         //start game
         Time.timeScale = 1;
     }
 
-    public void joinOtherLobbyBtnClick()
+    public void joinOtherLobby()
     {
         //leave lobby
         serverConnection.leaveLobby();
         //update UI
-        WaitingPlayersText.SetActive(false);
-        JoinLobbyButton.SetActive(false);
-        LobbyInput.SetActive(true);
-        JoinButton.SetActive(true);
+        multiplayerUI.setState(MultiplayerUI.State.LOBBY_SELECTION);
     }
 
     public void joinBtnClick()
     {
         //join lobby
-        int lobby = int.Parse(LobbyInput.GetComponentsInChildren<Text>()[1].text);
+        int lobby = multiplayerUI.getLobbyId();
         bool joined = serverConnection.joinLobby(lobby);
         Debug.Log("joined lobby");
         if (joined)
         {
             Debug.Log("stated game");
             //update UI
-            LobbyInput.SetActive(false);
-            JoinButton.SetActive(false);
+            multiplayerUI.setState(MultiplayerUI.State.JOINED_GAME);
             //start game
             Time.timeScale = 1;
         }
     }
 
+    public async Task switchServer(string ip)
+    {
+
+        multiplayerUI.setState(MultiplayerUI.State.CONNECTING);
+        ServerIp = ip;
+        //disconnect
+        serverConnection.disconnect();
+        //wait for all network threads to stop
+        await Task.Delay(100);
+        //connect to server
+        await serverConnection.connect(ServerIp);
+        Debug.Log("connected to server");
+        await serverConnection.login();
+        Debug.Log("logged in");
+        //create lobby
+        await createLobby();
+    }
+
     public void enemyJoined(int id)
     {
-        //adding new enemies to queue to be instantiated in Update
-        //because instantiating from another thread does not work
-        enemyJoins.Enqueue(id);
+        runInUpdate.Enqueue(() =>
+        {
+            Enemies[id] = Instantiate(EnemyPrefab);
+        });
     }
     public void enemyMoved(int id, Vector3 p, Vector3 v)
     {
@@ -117,11 +136,10 @@ public class Multiplayer : MonoBehaviour
 
     void Update()
     {
-        //create enemies joined to the lobby from prefab
-        while (enemyJoins.Count != 0)
+        //run functions queued to be run in update
+        while (runInUpdate.Count != 0)
         {
-            int id = enemyJoins.Dequeue();
-            Enemies[id] = Instantiate(EnemyPrefab);
+            runInUpdate.Dequeue().Invoke();
         }
     }
     void FixedUpdate()
@@ -144,7 +162,10 @@ public class Multiplayer : MonoBehaviour
         }
     }
 
-    void OnDestroy(){
+    void OnDestroy()
+    {
+        //disconnect from server
+        serverConnection.disconnect();
         //resume game when goind back to the main menu
         Time.timeScale = 1;
     }

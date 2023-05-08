@@ -26,7 +26,7 @@ public class Platform : MonoBehaviour
         // Иначе, если у кого-то медленный инет, их платформы могут сдвинуться в другие места по сравнению с другими игроками
 
         if (SceneManager.GetActiveScene().name=="Multiplayer_1v1"){
-            Random.seed = 123;
+            Random.InitState(123);
         }
     }
 

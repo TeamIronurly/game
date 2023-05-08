@@ -33,6 +33,11 @@ class ServerConnection
         return true;
     }
 
+    public void disconnect(){
+        tcpClient.Close();
+        udp.Close();
+    }
+
     public Task<bool> login()
     {
         var tcs = new TaskCompletionSource<bool>();
@@ -159,6 +164,7 @@ class ServerConnection
     {
         new Thread(() =>
         {
+            try{
             while (tcpClient.Connected)
             {
                 new Thread(() =>
@@ -167,6 +173,10 @@ class ServerConnection
                     //Debug.Log($"ping: {p}ms");
                 }).Start();
                 Thread.Sleep(100);
+            }
+            }catch(Exception e){
+                tcpClient.Close();
+                Console.Error.WriteLine(e);
             }
         }).Start();
     }
