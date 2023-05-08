@@ -22,20 +22,20 @@ class ServerConnection
     TcpClient tcpClient;
     UdpClient udp;
     NetworkStream tcp;
-    public async Task<bool> connect(string ip)
+    public async Task<bool> connect(string ip, int port)
     {
         tcpClient = new TcpClient();
-        await tcpClient.ConnectAsync(ip, 42069);
+        await tcpClient.ConnectAsync(ip, port);
         tcp = tcpClient.GetStream();
-        udp = new UdpClient(ip, 42069);
+        udp = new UdpClient(ip, port);
         startReceiveLoops();
         startPingLoop();
         return true;
     }
 
     public void disconnect(){
-        tcpClient.Close();
-        udp.Close();
+        tcpClient?.Close();
+        udp?.Close();
     }
 
     public Task<bool> login()
@@ -44,7 +44,7 @@ class ServerConnection
         getIdCallback = (Packet packet) =>
         {
             getIdCallback = null;
-            playerId = BitConverter.ToInt32(packet.bytes, 4);
+            playerId = BitConverter.ToInt32(packet.bytes, 8);
             tcs.SetResult(true);
         };
         send(new Packet(Packet.Type.GET_ID, 0));
@@ -71,7 +71,7 @@ class ServerConnection
         createdLobbyCallback = (Packet packet) =>
         {
             createdLobbyCallback = null;
-            int lobbyId = BitConverter.ToInt32(packet.bytes, 8);
+            int lobbyId = BitConverter.ToInt32(packet.bytes, 12);
             tcs.SetResult(lobbyId);
             startWaitingForPlayers();
         };
@@ -84,8 +84,8 @@ class ServerConnection
         var tcs = new TaskCompletionSource<bool>();
         playerJoinedCallback = (Packet packet) =>
         {
-            if (BitConverter.ToInt32(packet.bytes, 4) != playerId){
-                onPlayerJoined.Invoke(BitConverter.ToInt32(packet.bytes, 4));
+            if (BitConverter.ToInt32(packet.bytes, 8) != playerId){
+                onPlayerJoined.Invoke(BitConverter.ToInt32(packet.bytes, 8));
             };
             startWaitingForPlayers();
             joinFailedCallback = null;
@@ -123,11 +123,11 @@ class ServerConnection
     }
     void playerMovedCallback(Packet packet)
     {
-        int id = BitConverter.ToInt32(packet.bytes, 4);
-        float x = BitConverter.ToSingle(packet.bytes, 8);
-        float y = BitConverter.ToSingle(packet.bytes, 12);
-        float vx = BitConverter.ToSingle(packet.bytes, 16);
-        float vy = BitConverter.ToSingle(packet.bytes, 20);
+        int id = BitConverter.ToInt32(packet.bytes, 8);
+        float x = BitConverter.ToSingle(packet.bytes, 12);
+        float y = BitConverter.ToSingle(packet.bytes, 16);
+        float vx = BitConverter.ToSingle(packet.bytes, 20);
+        float vy = BitConverter.ToSingle(packet.bytes, 24);
         Vector3 p = new Vector3(x, y, 0);
         Vector3 v = new Vector3(vx, vy, 0);
         onPlayerMove.Invoke(id, p, v);
@@ -135,7 +135,7 @@ class ServerConnection
 
     void playerLostCallback(Packet packet)
     {
-        int id = BitConverter.ToInt32(packet.bytes, 4);
+        int id = BitConverter.ToInt32(packet.bytes, 8);
         if (id != playerId)
         {
             onWin();
@@ -143,7 +143,7 @@ class ServerConnection
     }
     void playerWonCallback(Packet packet)
     {
-        int id = BitConverter.ToInt32(packet.bytes, 4);
+        int id = BitConverter.ToInt32(packet.bytes, 8);
         if (id == playerId)
         {
             onWin();
@@ -154,7 +154,7 @@ class ServerConnection
     {
         playerJoinedCallback = (Packet packet) =>
         {
-            int id = BitConverter.ToInt32(packet.bytes, 4);
+            int id = BitConverter.ToInt32(packet.bytes, 8);
             if(id==playerId)return;
             onPlayerJoined.Invoke(id);
         };
@@ -216,7 +216,7 @@ class ServerConnection
                 joinFailedCallback?.Invoke();
                 break;
             case Packet.Type.JOINED:
-                Debug.Log($"player {BitConverter.ToInt32(packet.bytes, 4)} joined");
+                Debug.Log($"player {BitConverter.ToInt32(packet.bytes, 8)} joined");
                 playerJoinedCallback?.Invoke(packet);
                 break;
             case Packet.Type.CREATE_LOBBY:
@@ -226,7 +226,7 @@ class ServerConnection
                 createdLobbyCallback?.Invoke(packet);
                 break;
             case Packet.Type.LEFT:
-                Debug.Log("player " + BitConverter.ToInt32(packet.bytes, 4) + " left");
+                Debug.Log("player " + BitConverter.ToInt32(packet.bytes, 8) + " left");
                 break;
             case Packet.Type.MOVED:
                 playerMovedCallback(packet);
@@ -246,17 +246,20 @@ class ServerConnection
         {
             while (tcpClient.Connected)
             {
-                byte[] typeBuffer = new byte[4];
-                tcp.Read(typeBuffer, 0, 4);
-                Packet.Type type = (Packet.Type)BitConverter.ToInt32(typeBuffer);
+                byte[] lengthAndTypeBuffer = new byte[8];
+                tcp.Read(lengthAndTypeBuffer, 0, 8);
+                int length = BitConverter.ToInt32(lengthAndTypeBuffer, 0);
+                Packet.Type type = (Packet.Type)BitConverter.ToInt32(lengthAndTypeBuffer, 4);
+
                 byte[] bytes = new byte[Packet.Lengths[type]];
-                typeBuffer.CopyTo(bytes, 0);
-                int read = tcp.Read(bytes, 4, Packet.Lengths[type] - 4);
-                if (read != Packet.Lengths[type] - 4)
+                lengthAndTypeBuffer.CopyTo(bytes, 0);
+                int read = tcp.Read(bytes, 8, Packet.Lengths[type] - 8);
+                if (read == 0)
                 {
                     tcpClient.Close();
                     break;
                 }
+
                 receive(new Packet(Packet.Protocol.TCP, bytes));
             }
         }

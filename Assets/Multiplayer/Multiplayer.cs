@@ -1,18 +1,24 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.UI;
 
 public class Multiplayer : MonoBehaviour
 {
     public MultiplayerUI multiplayerUI;
     public Rigidbody Player;
     public Rigidbody EnemyPrefab;
-    public string ServerIp;
     public UnityEvent onWin;
+
+    [Serializable]
+    public struct ServerIpPort
+    {
+        public string ip;
+        public int port;
+    }
+    public List<ServerIpPort> serverIPs;
+
 
 
     struct EnemyMove
@@ -28,9 +34,13 @@ public class Multiplayer : MonoBehaviour
 
     Dictionary<int, Rigidbody> Enemies = new Dictionary<int, Rigidbody>();
     ServerConnection serverConnection;
+    string serverIp;
+    int serverPort;
 
     async Task Start()
     {
+        serverIp = serverIPs[0].ip;
+        serverPort = serverIPs[0].port;
         //pause game
         Time.timeScale = 0;
         //create server connection
@@ -44,7 +54,7 @@ public class Multiplayer : MonoBehaviour
         serverConnection.onPlayerJoined = enemyJoined;
         //connect to server
         multiplayerUI.setState(MultiplayerUI.State.CONNECTING);
-        await serverConnection.connect(ServerIp);
+        await serverConnection.connect(serverIp,serverPort);
         Debug.Log("connected to server");
         await serverConnection.login();
         Debug.Log("logged in");
@@ -96,17 +106,17 @@ public class Multiplayer : MonoBehaviour
         }
     }
 
-    public async Task switchServer(string ip)
+    public async Task switchServer(int serverId)
     {
-
         multiplayerUI.setState(MultiplayerUI.State.CONNECTING);
-        ServerIp = ip;
+        serverIp = serverIPs[serverId].ip;
+        serverPort = serverIPs[serverId].port;
         //disconnect
         serverConnection.disconnect();
         //wait for all network threads to stop
         await Task.Delay(100);
         //connect to server
-        await serverConnection.connect(ServerIp);
+        await serverConnection.connect(serverIp,serverPort);
         Debug.Log("connected to server");
         await serverConnection.login();
         Debug.Log("logged in");

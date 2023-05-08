@@ -194,7 +194,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Exit
+  m_Text: Main Menu
 --- !u!222 &2490780
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -682,9 +682,6 @@ MonoBehaviour:
   LobbyInput: {fileID: 1445848442}
   JoinButton: {fileID: 31933521}
   ServerSelector: {fileID: 963245899}
-  ServerIPs:
-  - 109.206.148.223
-  - 129.151.203.205
 --- !u!1 &439267966
 GameObject:
   m_ObjectHideFlags: 0
@@ -1500,7 +1497,6 @@ MonoBehaviour:
   multiplayerUI: {fileID: 314005792}
   Player: {fileID: 1448039049}
   EnemyPrefab: {fileID: 2981164128867579136, guid: 78e438feab7277880a761b5bececab72, type: 3}
-  ServerIp: 109.206.148.223
   onWin:
     m_PersistentCalls:
       m_Calls:
@@ -1516,6 +1512,13 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+  serverIPs:
+  - ip: 109.206.148.223
+    port: 42069
+  - ip: 129.151.203.205
+    port: 42069
+  - ip: 127.0.0.1
+    port: 42069
 --- !u!4 &892386091
 Transform:
   m_ObjectHideFlags: 0
@@ -1568,8 +1571,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 65, y: -65}
-  m_SizeDelta: {x: 80, y: 80}
+  m_AnchoredPosition: {x: 108.053, y: -51.616}
+  m_SizeDelta: {x: 166.1062, y: 53.233}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &926176028
 MonoBehaviour:
@@ -1843,6 +1846,8 @@ MonoBehaviour:
     - m_Text: Russia
       m_Image: {fileID: 0}
     - m_Text: Europe
+      m_Image: {fileID: 0}
+    - m_Text: Localhost
       m_Image: {fileID: 0}
   m_OnValueChanged:
     m_PersistentCalls:

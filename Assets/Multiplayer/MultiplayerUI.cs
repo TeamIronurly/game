@@ -1,7 +1,3 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -15,7 +11,6 @@ public class MultiplayerUI : MonoBehaviour
     public GameObject LobbyInput;
     public GameObject JoinButton;
     public GameObject ServerSelector;
-    public List<String> ServerIPs;
 
     public void setState(State state)
     {
@@ -41,6 +36,6 @@ public class MultiplayerUI : MonoBehaviour
     public async void selectedServer()
     {
         int serverId = ServerSelector.GetComponent<Dropdown>().value;
-        await multiplayer.switchServer(ServerIPs[serverId]);
+        await multiplayer.switchServer(serverId);
     }
 }
