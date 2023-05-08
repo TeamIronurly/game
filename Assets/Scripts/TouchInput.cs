@@ -9,7 +9,7 @@ public class TouchInput : MonoBehaviour
     public bool pressed = false;
     void Start()
     {
-        if (Application.isMobilePlatform){
+        if (!Application.isMobilePlatform){
             gameObject.SetActive(false);
             return;
         }
