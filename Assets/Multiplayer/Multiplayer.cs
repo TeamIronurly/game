@@ -143,4 +143,9 @@ public class Multiplayer : MonoBehaviour
             }
         }
     }
+
+    void OnDestroy(){
+        //resume game when goind back to the main menu
+        Time.timeScale = 1;
+    }
 }

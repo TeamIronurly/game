@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class Platform : MonoBehaviour
 {
@@ -24,7 +25,9 @@ public class Platform : MonoBehaviour
         // положение платформ будет точно одинаковое у всех игроков.
         // Иначе, если у кого-то медленный инет, их платформы могут сдвинуться в другие места по сравнению с другими игроками
 
-        Random.seed = 123;
+        if (SceneManager.GetActiveScene().name=="Multiplayer_1v1"){
+            Random.seed = 123;
+        }
     }
 
     void Update()
