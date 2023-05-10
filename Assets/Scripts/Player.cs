@@ -1,7 +1,6 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using System;
+
 
 public class Player : MonoBehaviour
 {
@@ -18,14 +17,23 @@ public class Player : MonoBehaviour
     private bool jumpTrigger = false;
     private float g = 9.81f;
 
+    [Header("Mobile Input")]
+    public TouchInput leftButton;
+    public TouchInput rightButton;
+    public TouchInput jumpButton;
+
+
     void Start()
     {
         rb = GetComponent<Rigidbody>();
+
+
     }
 
     void Update()
     {
-        jumpTrigger = jumpTrigger || Input.GetButtonDown("Jump");
+        jumpTrigger = jumpTrigger || Input.GetButtonDown("Jump") || jumpButton.pressed;
+        jumpButton.pressed = false;
     }
 
     void FixedUpdate()
@@ -37,7 +45,7 @@ public class Player : MonoBehaviour
             jumpCnt = Jumps;
         }
 
-        float k = Input.GetAxisRaw("Horizontal");
+        float k = Input.GetAxisRaw("Horizontal") + (leftButton.pressed ? -1 : 0)+ (rightButton.pressed ? 1 : 0);
         if (k != 0)
         {
             v.x += (k * speed - v.x) * 0.1f;
