@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 705507994}
-  m_IndirectSpecularColor: {r: 0.44657832, g: 0.49641222, b: 0.57481664, a: 1}
+  m_IndirectSpecularColor: {r: 0.4440218, g: 0.49316478, b: 0.5722311, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -1514,11 +1514,11 @@ MonoBehaviour:
         m_CallState: 2
   serverIPs:
   - ip: 109.206.148.223
-    port: 42069
+    port: 1337
   - ip: 129.151.203.205
-    port: 42069
+    port: 1337
   - ip: 127.0.0.1
-    port: 42069
+    port: 1337
 --- !u!4 &892386091
 Transform:
   m_ObjectHideFlags: 0
